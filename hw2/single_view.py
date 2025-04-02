@@ -51,14 +51,25 @@ if __name__ == "__main__":
     vanishing_points = get_points_from_image(image, 4, "Select Vanishing Points")
     p1, p2, p3, p4 = vanishing_points
 
+    # Compute vanishing points
+    v1, v2 = compute_vanishing_points(p1, p2, p3, p4)
+
+    # Show selected points and vanishing points
+    plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    plt.scatter([p1[0], p2[0], p3[0], p4[0], v1[0], v2[0]],
+                [p1[1], p2[1], p3[1], p4[1], v1[1], v2[1]], color=['red', 'red', 'red', 'red', 'blue', 'blue'])
+    plt.plot([p1[0], p2[0]], [p1[1], p2[1]], 'r-', linewidth=2)
+    plt.plot([p3[0], p4[0]], [p3[1], p4[1]], 'r-', linewidth=2)
+    plt.plot([p1[0], p3[0]], [p1[1], p3[1]], 'r-', linewidth=2)
+    plt.plot([p2[0], p4[0]], [p2[1], p4[1]], 'r-', linewidth=2)
+    plt.title("Selected Points and Vanishing Points")
+    plt.show()
+
     print("Select reference and target points (ref_top, ref_bottom, human_bottom, human_top)")
     ref_points = get_points_from_image(image, 4, "Select Reference Points")
     ref_top, ref_bottom, human_bottom, human_top = ref_points
 
     R = 201  # Reference height in cm
-
-    # Compute vanishing points
-    v1, v2 = compute_vanishing_points(p1, p2, p3, p4)
 
     # Compute height
     H = compute_height(ref_top, ref_bottom, human_bottom, human_top, R, v1, v2)
