@@ -1,0 +1,1 @@
+This is a repository for assignments in ME459, Introduction to Visual Intelligence.
