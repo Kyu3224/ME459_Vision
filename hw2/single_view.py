@@ -83,6 +83,8 @@ if __name__ == "__main__":
     for start, end in blue_lines:
         plt.plot([start[0], end[0]], [start[1], end[1]], 'b-', linewidth=1)
 
+    plt.plot([v1[0],v2[0]],[v1[1],v2[1]],'g-',linewidth=1)
+
     plt.title("Selected Points and Vanishing Points")
     plt.savefig(fig_name_1, dpi=300, bbox_inches='tight')
     plt.show()
