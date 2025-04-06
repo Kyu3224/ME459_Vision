@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+from utils import get_points_from_image
+
 def cross_product(p1, p2):
     return np.cross(p1, p2)
 
@@ -33,25 +35,6 @@ def get_unique_filename(base_name, ext="png"):
     return filename
 
 
-def get_points_from_image(images, num_points, window_name):
-    points = []
-
-    def mouse_callback(event, x, y, flags, param):
-        if event == cv2.EVENT_LBUTTONDOWN:
-            points.append([x, y, 1])
-            print(f"Point selected: {x}, {y}")
-            if len(points) == num_points:
-                cv2.setMouseCallback(window_name, lambda *args: None)
-                cv2.destroyWindow(window_name)
-
-    clone = images.copy()
-    cv2.imshow(window_name, clone)
-    cv2.setMouseCallback(window_name, mouse_callback)
-    while len(points) < num_points:
-        cv2.waitKey(1)
-    return np.array(points)
-
-
 if __name__ == "__main__":
     image = cv2.imread(f"{os.getcwd()}/hw2/hutme_ref.png")
 
@@ -62,7 +45,7 @@ if __name__ == "__main__":
 
     print("Select 4 points for vanishing point computation (p1 to p4)")
 
-    num_sampling = 5
+    num_sampling = 1
     points = []
     vanishing_points = list(get_points_from_image(image, 4 * num_sampling, "Select Vanishing Points"))
     for i in range(4):
