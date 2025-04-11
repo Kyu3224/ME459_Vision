@@ -8,6 +8,10 @@ from numpy.linalg import svd, inv, qr
 from scipy.linalg import rq
 
 use_rq = True
+# use_rq = False
+
+# Available options: 10, 15
+num_pts = 15
 
 # Load image
 img = cv2.imread(f'{os.getcwd()}/hw3/hw3_pattern.png')
@@ -15,7 +19,7 @@ img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 # Show image and get 10 clicked points
 plt.imshow(img_rgb)
-pts = list(get_points_from_image(img_rgb, 10, "Click 10 points", homogeneous=True))
+pts = list(get_points_from_image(img_rgb, num_pts, f"Click {num_pts} points", homogeneous=True))
 plt.close()
 
 c_true = np.array([166.20, 141.46, 170.08])
@@ -35,6 +39,15 @@ X = np.array([
     [0, 48, 48, 1],
     [48, 0, 48, 1]
 ])
+if num_pts == 15:
+    X_extra = np.array([
+    [36, 36, 0, 1],
+    [0, 36, 36, 1],
+    [36, 0, 36, 1],
+    [12, 24, 0, 1],
+    [0, 24, 36, 1],
+    ])
+    np.concatenate([X, X_extra])
 
 # Construct matrix A
 A = np.zeros((20, 12))
@@ -58,12 +71,18 @@ C = C[:3] / C[3]
 
 # Decompose projection matrix
 M = P[:, :3]
-if use_rq:
-    K, R = rq(M)
-else:
-    R_inv, K_inv = qr(inv(M))  # QR of inv(M)
-    K = inv(K_inv)
-    R = inv(R_inv)
+# From direct rq decomposition
+K_rq, R_rq = rq(M)
+# From qr decomposition
+R_inv, K_inv = qr(inv(M))  # QR of inv(M)
+K_qr = inv(K_inv)
+R_qr = inv(R_inv)
+
+print(f"K, R from scipy : \n {K_rq}, \n {R_rq}")
+print(f"K, R from numpy : \n {K_qr}, \n {R_qr}")
+
+K = K_rq if use_rq else K_qr
+R = R_rq if use_rq else R_qr
 
 # Normalize K
 K = K / K[2, 2]
