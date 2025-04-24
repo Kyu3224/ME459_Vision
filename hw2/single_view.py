@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-from utils import get_points_from_image
+from utils import *
 
 def cross_product(p1, p2):
     return np.cross(p1, p2)
@@ -25,14 +25,6 @@ def compute_height(ref_top, ref_bottom, human_bottom, human_top, R, v1, v2):
     t = normalize_homogeneous(cross_product(cross_product(v, human_top), cross_product(ref_top, ref_bottom)))
     cr = (t[1] - ref_bottom[1]) / (ref_top[1] - ref_bottom[1])
     return R * cr
-
-def get_unique_filename(base_name, ext="png"):
-    filename = f"{base_name}.{ext}"
-    count = 1
-    while os.path.exists(filename):
-        filename = f"{base_name}_{count}.{ext}"
-        count += 1
-    return filename
 
 
 if __name__ == "__main__":

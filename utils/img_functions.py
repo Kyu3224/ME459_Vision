@@ -1,6 +1,14 @@
 import cv2
 import numpy as np
+import os
 
+def get_unique_filename(base_name, ext="png"):
+    filename = f"{base_name}.{ext}"
+    count = 1
+    while os.path.exists(filename):
+        filename = f"{base_name}_{count}.{ext}"
+        count += 1
+    return filename
 
 def get_points_from_image(images, num_points, window_name, homogeneous=True):
     points = []
