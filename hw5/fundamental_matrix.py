@@ -255,9 +255,9 @@ def extract_feature_matches(img1, img2, method='SIFT', refine=True, max_matches=
     return pts1_h, pts2_h, matches, kp1, kp2
 
 
-img_name = "c"
+img_name = "a"
 mode = "SIFT" # Available options: SIFT, AKAZE, ORB, Manual
-num_pts = 30 # Should be equal or bigger than 8.
+num_pts = 1000 # Should be equal or bigger than 8.
 refinement = True
 
 assert num_pts >= 8
@@ -287,23 +287,28 @@ F_norm = compute_fundamental_matrix_normalized(x1_pts, x2_pts)
 pts1 = (x1_pts[:2] / x1_pts[2]).T
 pts2 = (x2_pts[:2] / x2_pts[2]).T
 
-# RANSAC-based estimation -> To improve performance
-F_ransac, inlier_mask = cv2.findFundamentalMat(pts1, pts2, cv2.FM_RANSAC, ransacReprojThreshold=1.0)
+if mode != "Manual":
+    # RANSAC-based estimation -> To improve performance
+    F_ransac, inlier_mask = cv2.findFundamentalMat(pts1, pts2, cv2.FM_RANSAC, ransacReprojThreshold=1.0)
 
-# Select inliers
-x1_in = x1_pts[:, inlier_mask.ravel() == 1]
-x2_in = x2_pts[:, inlier_mask.ravel() == 1]
+    # Select inliers
+    x1_in = x1_pts[:, inlier_mask.ravel() == 1]
+    x2_in = x2_pts[:, inlier_mask.ravel() == 1]
 
-# Compute refined normalized fundamental matrix
-F_refined = compute_fundamental_matrix_normalized(x1_in, x2_in)
+    # Compute refined normalized fundamental matrix
+    F_refined = compute_fundamental_matrix_normalized(x1_in, x2_in)
 
 # Define fundamental matrices and associated point correspondences
 epipolar_configs = [
     ("basic", "Fundamental Matrix F", F_basic, x1_pts, x2_pts),
-    ("norm", "Fundamental Matrix F with normalization", F_norm, x1_pts, x2_pts),
-    ("ransac", "Fundamental Matrix F with RANSAC", F_ransac, x1_in, x2_in),
-    ("refine", "Fundamental Matrix F with RANSAC + normalization", F_refined, x1_in, x2_in),
+    ("norm", "Fundamental Matrix F with normalization", F_norm, x1_pts, x2_pts)
 ]
+
+if mode != "Manual":
+    epipolar_configs.extend([
+        ("ransac", "Fundamental Matrix F with RANSAC", F_ransac, x1_in, x2_in),
+        ("refine", "Fundamental Matrix F with RANSAC + normalization", F_refined, x1_in, x2_in)
+    ])
 
 # Loop through each configuration
 for label, description, F, pts1, pts2 in epipolar_configs:
