@@ -94,7 +94,7 @@ def compute_fundamental_matrix_normalized(x1, x2):
     Returns:
         F: (3, 3) fundamental matrix
     """
-    assert x1.shape[1] == x2.shape[1] >= 8, "At least 8 point correspondences are required"
+    assert x1.shape[1] == x2.shape[1] >= 8, f"At least 8 point correspondences are required. Current: {x1.shape[1]}"
 
     # Normalize points
     x1_norm, T1 = normalize_points(x1)
@@ -140,7 +140,7 @@ def draw_epipolar_lines(img, F, ref_pts, pts, method, img_name, which_img='left'
         which_img: 'left' or 'right'
     """
     img_draw = img.copy()
-    H, W, _ = img.shape
+    H, W = img.shape[:2]
 
     if which_img == 'left':
         lines = F @ pts  # Epipolar lines in left image
@@ -214,7 +214,7 @@ def compute_point_line_distances(pts, lines):
     return numerator / denominator
 
 
-def extract_feature_matches(img1, img2, method='SIFT', max_matches=500):
+def extract_feature_matches(img1, img2, method='SIFT', refine=True, max_matches=500):
     # 1. Feature Detector 선택
     if method == 'SIFT':
         detector = cv2.SIFT_create()
@@ -236,8 +236,13 @@ def extract_feature_matches(img1, img2, method='SIFT', max_matches=500):
         matcher = cv2.BFMatcher(cv2.NORM_HAMMING)
 
     # 4. 매칭 수행 및 정렬
-    matches = matcher.match(des1, des2)
-    matches = sorted(matches, key=lambda x: x.distance)[:max_matches]
+    if refine:
+        knn_matches = matcher.knnMatch(des1, des2, k=2)
+        good_matches = [m for m, n in knn_matches if m.distance < 0.75 * n.distance]
+        matches = sorted(good_matches, key=lambda x: x.distance)[:max_matches]
+    else:
+        matches = matcher.match(des1, des2)
+        matches = sorted(matches, key=lambda x: x.distance)[:max_matches]
 
     # 5. 대응점 좌표 추출
     pts1 = np.array([kp1[m.queryIdx].pt for m in matches])  # (N, 2)
@@ -251,13 +256,19 @@ def extract_feature_matches(img1, img2, method='SIFT', max_matches=500):
 
 
 img_name = "c"
-mode = "ORB" # Available options: SIFT, AKAZE, ORB, Manual
-num_pts = 15 # Should be equal or bigger than 8.
+mode = "SIFT" # Available options: SIFT, AKAZE, ORB, Manual
+num_pts = 30 # Should be equal or bigger than 8.
+refinement = True
 
 assert num_pts >= 8
 
 img1 = cv2.cvtColor(cv2.imread(f'{os.getcwd()}/hw5/hw5_img/{img_name}1.jpg'), cv2.COLOR_BGR2RGB)
 img2 = cv2.cvtColor(cv2.imread(f'{os.getcwd()}/hw5/hw5_img/{img_name}2.jpg'), cv2.COLOR_BGR2RGB)
+
+# Pre-processing (Improve Contrast)
+if refinement:
+    img1 = cv2.equalizeHist(cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY))
+    img2 = cv2.equalizeHist(cv2.cvtColor(img2, cv2.COLOR_RGB2GRAY))
 
 if mode == "Manual":
     points = collect_points(img_name, [1,2], num_pts)
@@ -266,7 +277,8 @@ if mode == "Manual":
     x1_pts = np.array(points[f"{img_name}1"]).T  # (3, N)
     x2_pts = np.array(points[f"{img_name}2"]).T  # (3, N)
 else:
-    x1_pts, x2_pts, matches, kp1, kp2 = extract_feature_matches(img1, img2, method=mode, max_matches=num_pts)
+    x1_pts, x2_pts, matches, kp1, kp2 = extract_feature_matches(img1, img2,refine=refinement,
+                                                                method=mode, max_matches=num_pts)
 
 F_basic = compute_fundamental_matrix(x1_pts, x2_pts)
 F_norm = compute_fundamental_matrix_normalized(x1_pts, x2_pts)
@@ -297,8 +309,14 @@ epipolar_configs = [
 for label, description, F, pts1, pts2 in epipolar_configs:
     print(f"{description}:\n{F}\n")
 
-    draw_epipolar_lines(img1, F, pts1, pts2, method=mode, img_name=f"{img_name}1/{label}", which_img='left')
-    draw_epipolar_lines(img2, F, pts2, pts1, method=mode, img_name=f"{img_name}2/{label}", which_img='right')
+    if refinement:
+        name1 = f"{img_name}1_refined/{label}"
+        name2 = f"{img_name}2_refined/{label}"
+    else:
+        name1 = f"{img_name}1/{label}"
+        name2 = f"{img_name}2/{label}"
+    draw_epipolar_lines(img1, F, pts1, pts2, method=mode, img_name=name1, which_img='left')
+    draw_epipolar_lines(img2, F, pts2, pts1, method=mode, img_name=name2, which_img='right')
 
     l1 = F @ pts2
     l2 = F.T @ pts1
