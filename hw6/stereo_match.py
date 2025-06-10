@@ -94,7 +94,7 @@ if __name__ == '__main__':
         img3 = None
 
     height, width = img1.shape
-    gap = 2  # Options: 1, 2, 5
+    gap = 1  # Options: 1, 2, 5
     max_disp = 128  # Options: 32, 64, 128
     metric = 'SAD'  # Available options are SAD, SSD, NCC
 
@@ -109,7 +109,8 @@ if __name__ == '__main__':
     plt.colorbar()
 
     plt.axis('off')
-    save_dir = os.path.join(os.getcwd(), "hw6", "results", metric, 'gap_' + str(gap) + '_' + img_name)
+    save_dir = os.path.join(os.getcwd(), "hw6", "results", metric,
+                            'gap_' + str(gap) + '_' + img_name + str(max_disp) + 'disp')
     os.makedirs(os.path.dirname(save_dir), exist_ok=True)
 
     if img_name == 'A':
